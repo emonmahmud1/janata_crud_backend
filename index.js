@@ -7,8 +7,7 @@ require("dotenv").config();
 const port = 5000;
 
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
-const uri =
-  `mongodb+srv://${process.env.DB_NAME}:${process.env.DB_PASS}@cluster0.in9z4qj.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
+const uri = `mongodb+srv://${process.env.DB_NAME}:${process.env.DB_PASS}@cluster0.in9z4qj.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -18,7 +17,7 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   },
 });
-const janataCollection = client.db("janatawifiDb").collection("data");
+const tradeCollection = client.db("janatawifiDb").collection("data");
 
 async function run() {
   try {
@@ -28,10 +27,10 @@ async function run() {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
-        const totalDocuments = await janataCollection.countDocuments();
+        const totalDocuments = await tradeCollection.countDocuments();
         const totalPage = Math.ceil(totalDocuments / limit);
 
-        const result = await janataCollection
+        const result = await tradeCollection
           .find()
           .skip(skip)
           .limit(limit)
@@ -47,11 +46,41 @@ async function run() {
         res.status(500).json({ error: "Failed to fetch data" });
       }
     });
+    // get all treades code
+    app.get("/tradecodes", async (req, res) => {
+      try {
+        const tradeCodes = await tradeCollection.aggregate([
+          { $group: { _id: "$trade_code" } }, 
+          { $project: { _id: 0, trade_code: "$_id" } }
+        ]).toArray();
+    
+        res.json(tradeCodes);
+      } catch (err) {
+        console.error("Error fetching trade codes:", err);
+        res.status(500).json({ error: "Failed to fetch trade codes" });
+      }
+    });
+    // search
+    app.get("/trade/:tradeCode", async (req, res) => {
+      const code = req.params.tradeCode;
+      const query = {
+        trade_code: code,
+      };
+      try {
+        const result = await tradeCollection.find(query).toArray();
+        res.json({
+          trades: result,
+          totalTrades: result.length,
+          tradeCode: code,
+        });
+      } catch (err) {
+        res.status(500).json({ error: "Failed to fetch data" });
+      }
+    });
     // update
     app.put("/trade/:id", async (req, res) => {
       const { id } = req.params;
       const updatedData = req.body;
-      console.log(updatedData);
       const filter = { _id: new ObjectId(id) };
       const updated = {
         $set: {
@@ -62,16 +91,13 @@ async function run() {
         },
       };
       try {
-        const result = await janataCollection.updateOne(filter, updated);
-        if(!result.modifiedCount==1){
-          res.status(404).json({message: "wrong information"})
+        const result = await tradeCollection.updateOne(filter, updated);
+        if (!result.modifiedCount == 1) {
+          res.status(404).json({ message: "wrong information" });
+        } else {
+          res.status(200).json({ message: "updated succesfully" });
         }
-        else{
-          res.status(200).json({message: "updated succesfully"})
-        }
-        console.log(result);
       } catch (err) {
-        console.log(err);
         res.status(500).json({ error: "can't update" });
       }
     });
