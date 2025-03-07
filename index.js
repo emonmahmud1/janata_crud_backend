@@ -4,7 +4,7 @@ const cors = require("cors");
 app.use(cors());
 app.use(express.json());
 require("dotenv").config();
-const port = 5000;
+const port = process.env.PORT || 5000;
 
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri = `mongodb+srv://${process.env.DB_NAME}:${process.env.DB_PASS}@cluster0.in9z4qj.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
@@ -49,11 +49,13 @@ async function run() {
     // get all treades code
     app.get("/tradecodes", async (req, res) => {
       try {
-        const tradeCodes = await tradeCollection.aggregate([
-          { $group: { _id: "$trade_code" } }, 
-          { $project: { _id: 0, trade_code: "$_id" } }
-        ]).toArray();
-    
+        const tradeCodes = await tradeCollection
+          .aggregate([
+            { $group: { _id: "$trade_code" } },
+            { $project: { _id: 0, trade_code: "$_id" } },
+          ])
+          .toArray();
+
         res.json(tradeCodes);
       } catch (err) {
         console.error("Error fetching trade codes:", err);
