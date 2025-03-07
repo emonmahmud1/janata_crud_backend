@@ -8,7 +8,7 @@ const port = 5000;
 
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri =
-  "mongodb+srv://myDb:IL7K4xQQzdSFVYfF@cluster0.in9z4qj.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+  `mongodb+srv://${process.env.DB_NAME}:${process.env.DB_PASS}@cluster0.in9z4qj.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
