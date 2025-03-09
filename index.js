@@ -46,6 +46,29 @@ async function run() {
         res.status(500).json({ error: "Failed to fetch data" });
       }
     });
+    // add trade
+    app.post("/add-trade", async (req, res) => {
+      const data = req.body;
+      const docs = {
+        trade_code: data.trade_code,
+        open: data.open,
+        close: data.close,
+        high: data.high,
+        low: data.low,
+        volume: data.volume,
+        date: new Date().toISOString().split("T")[0],
+      };
+      try {
+        const result = await tradeCollection.insertOne(docs);
+        if (result) {
+          console.log(result);
+          res.status(200).json({ message: "Added succesfully" });
+        }
+      } catch (err) {
+        console.log(err);
+        res.status(500).json({ error: "Failed to Add data" });
+      }
+    });
     // get all treades code
     app.get("/tradecodes", async (req, res) => {
       try {
@@ -58,7 +81,6 @@ async function run() {
 
         res.json(tradeCodes);
       } catch (err) {
-        console.error("Error fetching trade codes:", err);
         res.status(500).json({ error: "Failed to fetch trade codes" });
       }
     });
@@ -101,6 +123,22 @@ async function run() {
         }
       } catch (err) {
         res.status(500).json({ error: "can't update" });
+      }
+    });
+    app.delete("/delete-trade/:id", async (req, res) => {
+      const id = req.params.id;
+      console.log(id);
+      const query = { _id: new ObjectId(id) };
+      try {
+        const result = await tradeCollection.deleteOne(query);
+        if (result.deletedCount === 1) {
+          console.log("Successfully deleted");
+          res
+            .status(200)
+            .json({ message: `Succesfully deleted with id ${id}` });
+        }
+      } catch (err) {
+        res.status(500).json({ error: "can't delete" });
       }
     });
   } finally {
